@@ -1,3 +1,5 @@
+> **Refonte en cours** sur la branche `feat/refonte-django-react` : voir [docs/02-architecture.md](docs/02-architecture.md). Le reste de ce fichier décrit la v1.
+
 # Classio
 
 Application Next.js 15 App Router pour la gestion scolaire.

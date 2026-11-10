@@ -1,0 +1,16 @@
+# Dépendances directes de production. Le verrou avec hachages est base.txt :
+#   pip-compile --generate-hashes --strip-extras -o requirements/base.txt requirements/base.in
+Django~=5.2.0
+djangorestframework~=3.16
+drf-spectacular~=0.28
+psycopg[binary]~=3.2
+django-environ~=0.12
+argon2-cffi~=25.1
+celery[redis]~=5.5
+django-redis~=6.0
+openpyxl~=3.1
+phonenumbers>=9.0
+weasyprint>=66
+django-storages[s3]~=1.14
+sentry-sdk[django,celery]~=2.40
+gunicorn~=23.0

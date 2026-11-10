@@ -2,3 +2,15 @@ node_modules/
 .next/
 .env*
 !.env.example
+
+# Refonte Django / React
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+dist/
+dev-dist/
+*.tsbuildinfo
+staticfiles/
+media/

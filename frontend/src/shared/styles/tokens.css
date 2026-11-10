@@ -1,0 +1,32 @@
+/* Aucune police web : la pile système évite un téléchargement sur forfait mobile. */
+:root {
+  --forest: #0e5a43;
+  --forest-dark: #0a4332;
+  --sun: #f4b740; /* Accent seulement : 1,8:1 sur blanc, jamais pour du texte. */
+  --laterite: #b4472a;
+  --ivory: #fbf7ec;
+  --ink: #14231e;
+  --muted: #5b6b65;
+  --line: #e2ddcf;
+  --surface: #ffffff;
+  --success: #1e7a3e;
+  --warning: #8a5a00;
+  --danger: #b4472a;
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 12px;
+  --tap: 48px; /* Hauteur minimale de toute cible tactile. */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px; /* En dessous, iOS zoome à la mise au point d'un champ. */
+  line-height: 1.5;
+}
