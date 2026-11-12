@@ -8,6 +8,8 @@ from apps.tenancy.context import tenant_context
 from apps.tenancy.middleware import TenantMiddleware, school_slug_from_host
 from apps.tenancy.models import School
 
+from .conftest import as_app_role
+
 pytestmark = pytest.mark.django_db
 
 
@@ -49,11 +51,11 @@ class TestAccess:
         assert call("ecole-a.classio.test").status_code == 403
 
     def test_user_of_another_school_is_refused(self, school_a):
-        stranger = User.objects.create_user("+2290197000002")
+        stranger = User.objects.create_user("+2290195000002")
         assert call("ecole-a.classio.test", stranger).status_code == 403
 
     def test_member_gets_the_school_context(self, school_a):
-        teacher = User.objects.create_user("+2290197000003")
+        teacher = User.objects.create_user("+2290195000003")
         with tenant_context(school_a["school"].pk):
             Membership.objects.create(user=teacher, role="TEACHER", full_name="Prof")
 
@@ -63,11 +65,12 @@ class TestAccess:
             seen["count"] = Student.objects.count()
             return JsonResponse({})
 
-        assert call("ecole-a.classio.test", teacher, view).status_code == 200
+        with as_app_role():
+            assert call("ecole-a.classio.test", teacher, view).status_code == 200
         assert seen["count"] == 1
 
     def test_error_response_rolls_back_writes(self, school_a):
-        teacher = User.objects.create_user("+2290197000004")
+        teacher = User.objects.create_user("+2290195000004")
         with tenant_context(school_a["school"].pk):
             Membership.objects.create(user=teacher, role="TEACHER", full_name="Prof")
 
@@ -77,7 +80,7 @@ class TestAccess:
 
         from django.db import transaction
 
-        with transaction.atomic():  # savepoint interne du test
+        with transaction.atomic(), as_app_role():  # savepoint interne du test
             call("ecole-a.classio.test", teacher, view)
         school_a["student"].refresh_from_db()
         assert school_a["student"].first_name != "écrasé"

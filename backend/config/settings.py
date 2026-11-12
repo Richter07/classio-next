@@ -9,8 +9,21 @@ environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
+if not DEBUG and "*" in ALLOWED_HOSTS:
+    # « * » désactive la vérification de l'en-tête Host, dont dépend le choix de l'école.
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("ALLOWED_HOSTS ne doit pas contenir « * » en production.")
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# Nombre de proxys de confiance devant Django (Caddy en production : 1). Sert à lire l'adresse
+# réelle du client dans X-Forwarded-For, pour les limites anti-abus.
+TRUSTED_PROXY_COUNT = env.int("TRUSTED_PROXY_COUNT", default=0)
+# Adresse publique de l'application, imprimée sur les lettres d'accès.
+PUBLIC_URL = env("PUBLIC_URL", default="http://localhost:5173")
+# Version du texte de confidentialité accepté par les parents (à changer à chaque révision).
+PRIVACY_VERSION = "2026-11-v1"
 BASE_DOMAIN = env("BASE_DOMAIN")
-OTP_HMAC_KEY = env("OTP_HMAC_KEY")
+ACCESS_CODE_KEY = env("ACCESS_CODE_KEY")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -27,6 +40,7 @@ INSTALLED_APPS = [
     "apps.students",
     "apps.grades",
     "apps.notifications",
+    "apps.documents",
 ]
 
 MIDDLEWARE = [
@@ -64,8 +78,10 @@ DATABASES["default"]["ENGINE"] = "django.db.backends.postgresql"
 AUTH_USER_MODEL = "accounts.User"
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher"]
 AUTH_PASSWORD_VALIDATORS = [
+    # 8 caractères : un parent doit pouvoir le retenir sur un téléphone d'entrée de gamme ; la
+    # limitation des essais (5 par numéro / 15 min) compense une longueur modeste.
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-     "OPTIONS": {"min_length": 10}},
+     "OPTIONS": {"min_length": 8}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
 ]
 
@@ -87,15 +103,21 @@ CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = None
 CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_SERIALIZER = "json"
+# En développement, les tâches s'exécutent sur place : pas de worker Celery à lancer.
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=DEBUG)
+CELERY_TASK_TIME_LIMIT = 15 * 60
+CELERY_BEAT_SCHEDULE = {
+    "purge-quotidienne": {"task": "apps.documents.tasks.purge_expired", "schedule": 24 * 3600},
+}
 CELERY_ACCEPT_CONTENT = ["json"]
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
+        "apps.tenancy.permissions.SessionAuth",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_THROTTLE_RATES": {"otp_request": "5/hour", "otp_verify": "10/hour"},
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
 }
 
 LANGUAGE_CODE = "fr"
@@ -104,6 +126,15 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+DATA_UPLOAD_MAX_MEMORY_SIZE = 3 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 3 * 1024 * 1024
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {"classio": {"handlers": ["console"], "level": "INFO"}},
+}
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

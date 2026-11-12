@@ -59,37 +59,35 @@ L'interface, elle, n'emploie aucune police web : la pile système évite un tél
 5. **Des mots simples :** « Envoyer à la direction », pas « Soumettre ». Pas de jargon, pas d'anglais.
 6. **La couleur ne porte jamais seule l'information :** une note sous la moyenne a aussi une icône.
 
-## 3. Espace parent : connexion par code
+## 3. Espace parent : connexion par mot de passe
 
-Le parent ne crée rien et ne retient rien. Il n'y a qu'un seul champ par écran.
+Décision du 12 novembre 2026 : pas de SMS pour l'instant (coût). Le parent se connecte avec son
+numéro et un mot de passe, et reste connecté 30 jours sur son téléphone.
 
 ```
 ┌───────────────────────┐   ┌───────────────────────┐   ┌───────────────────────┐
 │       ◖ classio       │   │  ‹ Retour             │   │  Bonjour              │
-│                       │   │                       │   │                       │
-│  Votre numéro         │   │  Entrez le code       │   │ ┌───────────────────┐ │
-│  de téléphone         │   │  reçu sur WhatsApp    │   │ │ Koffi · 6e A      │ │
-│                       │   │  au 01 97 •• •• 00    │   │ │ CEG Les Pylônes   │ │
-│ ┌───────────────────┐ │   │                       │   │ │ Maths : 14/20 hier│ │
-│ │+229 01 97 00 00 00│ │   │  [4] [8] [1] [_][_][_]│   │ │ Moyenne : 12,75   │ │
-│ └───────────────────┘ │   │                       │   │ └───────────────────┘ │
-│                       │   │  Renvoyer dans 0:45   │   │ ┌───────────────────┐ │
-│ [ Recevoir mon code ] │   │  Recevoir par SMS     │   │ │ Awa · CM2         │ │
-│                       │   │                       │   │ │ École Saint-Michel│ │
-│ Le numéro donné       │   │                       │   │ │ Pas de note récente││
-│ à l'école.            │   │                       │   │ └───────────────────┘ │
+│                       │   │  Première connexion   │   │ ┌───────────────────┐ │
+│  Numéro de téléphone  │   │                       │   │ │ Koffi · 6e A      │ │
+│ [+229 01 97 00 00 01] │   │  Numéro               │   │ │ Moyenne 16,09     │ │
+│  Mot de passe         │   │  Code de l'école      │   │ └───────────────────┘ │
+│ [••••••••] Afficher   │   │  [ K7QM-3XPA ]        │   │ ┌───────────────────┐ │
+│                       │   │  Mot de passe ×2      │   │ │ Sèna · 3e A       │ │
+│ [ Me connecter ]      │   │  ☑ J'accepte la       │   │ │ Moyenne 7,81      │ │
+│ [ Première connexion ]│   │    confidentialité    │   │ └───────────────────┘ │
+│  Mot de passe oublié ?│   │ [ Enregistrer ]       │   │                       │
 └───────────────────────┘   └───────────────────────┘   └───────────────────────┘
 ```
 
-- **Clavier numérique** (`inputmode="numeric"`) et remplissage automatique du code
-  (`autocomplete="one-time-code"`), pour que le parent n'ait souvent rien à taper.
-- **Même écran pour tous les numéros :** il ne révèle jamais si un numéro est connu d'une école.
-- **Le repli est visible :** si WhatsApp n'arrive pas, « Recevoir par SMS » s'active après 45 secondes.
-- **Session longue (30 jours) sur le téléphone :** une reconnexion coûte un SMS, et de la patience.
-- **Le premier lien d'activation** ouvre directement l'écran du code, avec le numéro déjà rempli.
-- **Proposer l'installation de l'application** seulement après la première note consultée, jamais
-  à l'arrivée : le parent sait alors à quoi elle sert, et le push remplace des SMS payants.
-- **Un parent, plusieurs écoles :** les enfants s'affichent ensemble, le nom de l'école sert de repère.
+- **L'accès vient de l'école, sur papier.** Le secrétariat imprime une lettre par parent (code à
+  usage unique, valable 30 jours) et la remet par l'enfant ou en réunion de parents.
+- **Première connexion :** numéro + code + mot de passe choisi + consentement. Le code ne sert
+  qu'une fois et n'est valable qu'avec le bon numéro.
+- **Mot de passe oublié :** le secrétariat génère un nouveau code en un clic ; l'ancien est annulé.
+- **Mot de passe :** 8 caractères au moins, les mots de passe trop courants sont refusés.
+  Des chiffres seuls sont acceptés : plus simple à taper sur un téléphone d'entrée de gamme.
+- **Même message d'erreur** pour un numéro inconnu et un mauvais mot de passe.
+- **Un parent, plusieurs écoles :** un seul compte ; les enfants s'affichent ensemble.
 
 ## 4. Espace enseignant : grille de notes
 

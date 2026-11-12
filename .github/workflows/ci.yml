@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Le jeton du workflow ne peut que lire le dépôt.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      DJANGO_SECRET_KEY: ci-uniquement
+      DJANGO_DEBUG: "True"
+      BASE_DOMAIN: classio.localhost
+      ALLOWED_HOSTS: localhost,testserver
+      ACCESS_CODE_KEY: ci-uniquement
+      REDIS_URL: redis://localhost:6379/0
+      # Les tests s'exécutent sous le rôle propriétaire et basculent sur classio_app eux-mêmes.
+      DATABASE_URL: postgres://classio_owner:owner_ci@localhost:5432/classio
+      MIGRATION_DATABASE_URL: postgres://classio_owner:owner_ci@localhost:5432/classio
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Bibliothèques de WeasyPrint
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
+      - name: Rôles PostgreSQL (mêmes que la production)
+        env:
+          PGHOST: localhost
+          PGPASSWORD: postgres
+          POSTGRES_USER: postgres
+          CLASSIO_OWNER_PASSWORD: owner_ci
+          CLASSIO_APP_PASSWORD: app_ci
+        run: sh ../infra/postgres/init/01-roles.sh
+      - name: Dépendances (hachages vérifiés)
+        run: pip install --require-hashes -r requirements/dev.txt
+      - run: ruff check .
+      - name: Migrations à jour
+        run: python manage.py makemigrations --check --dry-run
+      - run: pytest -q
+      - name: Vulnérabilités connues
+        run: pip-audit -r requirements/base.txt --no-deps --disable-pip
+
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Vulnérabilités connues
+        run: npm audit --omit=dev --audit-level=high

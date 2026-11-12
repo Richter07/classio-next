@@ -1,4 +1,4 @@
-> **Refonte en cours** sur la branche `feat/refonte-django-react` : voir [docs/02-architecture.md](docs/02-architecture.md). Le reste de ce fichier décrit la v1.
+> **Refonte en cours** sur la branche `feat/refonte-django-react`. Pour tout lancer : `./dev.sh`. Comptes et scénarios : [docs/03-guide-de-test.md](docs/03-guide-de-test.md). Architecture : [docs/02-architecture.md](docs/02-architecture.md). Le reste de ce fichier décrit la v1.
 
 # Classio
 

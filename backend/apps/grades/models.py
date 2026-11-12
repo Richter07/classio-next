@@ -138,6 +138,7 @@ class ReportCard(TenantModel):
     snapshot = models.JSONField(default=dict)
     pdf_key = models.CharField(max_length=255, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    published_by_user_id = models.UUIDField(null=True, blank=True)
 
     class Meta:
         constraints = [

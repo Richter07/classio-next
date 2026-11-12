@@ -19,11 +19,12 @@ classio-next/                    Branche feat/refonte-django-react
 │   │   │   ├── context.py       tenant_context() : point d'entrée unique vers les données
 │   │   │   ├── middleware.py    Sous-domaine vers école, contrôle d'appartenance
 │   │   │   └── rls.py           SQL : politiques, FK composites, journal d'audit
-│   │   ├── accounts/            User global, Membership, OTP, abonnements push
+│   │   ├── accounts/            User global, Membership, codes d'accès, comptes du personnel
 │   │   ├── academics/           Années, périodes, niveaux, classes, matières, coefficients
 │   │   ├── students/            Élèves, inscriptions, parents, imports
 │   │   ├── grades/              Évaluations, notes, journal, bulletins
-│   │   └── notifications/       File d'envoi push, WhatsApp, SMS
+│   │   ├── notifications/       Nouveautés des parents (dans l'application, push à venir)
+│   │   └── documents/           PDF longs en tâche de fond (Celery), purges
 │   └── tests/                   Isolation prouvée sur un vrai PostgreSQL
 ├── frontend/                    PWA React, indépendante du backend
 │   ├── package.json
@@ -33,7 +34,7 @@ classio-next/                    Branche feat/refonte-django-react
 │       ├── main.tsx
 │       ├── app/                 Routes et fournisseurs globaux
 │       ├── features/            Un dossier par espace, chargé à la demande
-│       │   ├── auth/            Numéro, OTP
+│       │   ├── auth/            Connexion, première connexion, confidentialité
 │       │   ├── parent/          Enfants, notes, bulletins
 │       │   ├── teacher/         Grille de saisie
 │       │   ├── school-admin/    Direction et secrétariat
@@ -45,6 +46,10 @@ classio-next/                    Branche feat/refonte-django-react
 │           └── ui/              Composants communs
 ├── infra/
 │   ├── docker-compose.dev.yml   PostgreSQL 17 et Redis 7, sur la boucle locale
+│   ├── docker-compose.prod.yml  Production : Caddy, API, worker, planificateur, base, Redis
+│   ├── caddy/                   Image web (application construite + HTTPS)
+│   ├── backup.sh                Sauvegarde chiffrée quotidienne
+│   └── restore-test.sh          Test de restauration
 │   └── postgres/init/           Création des deux rôles PostgreSQL
 └── docs/
 ```
@@ -55,6 +60,9 @@ traverse, chacun a ses dépendances, son `.env` et se déploie seul.
 La v1 Next.js reste à la racine pour l'instant, le temps de décider de son sort (voir section 7).
 
 ## 2. Installation
+
+Raccourci : `./dev.sh` fait tout ce qui suit et lance les deux serveurs (voir
+[03-guide-de-test.md](03-guide-de-test.md)). Le détail, pour comprendre ou dépanner :
 
 Prérequis : Python 3.12, Node 22, Docker. WeasyPrint s'appuie sur Pango : si `import weasyprint`
 échoue sur votre poste, `sudo apt install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0`.
@@ -96,7 +104,7 @@ et de même pour `dev`.
 
 | Portée | Tables | Isolation |
 |---|---|---|
-| Globale | `School`, `User`, `OtpChallenge`, `PushSubscription` | Pas de RLS : aucune donnée pédagogique, aucun nom de personne |
+| Globale | `School`, `User`, `AccessCode`, `PushSubscription` | Pas de RLS : aucune donnée pédagogique, aucun nom de personne |
 | Par école | Tout le reste | `school_id` + RLS + FK composites |
 
 Tous les identifiants sont des UUID : ils ne s'énumèrent pas, et le téléphone peut en générer hors ligne.
@@ -188,8 +196,9 @@ Aucune bibliothèque de composants ni de tableur : c'est le poids téléchargé 
 
 | Sujet | État actuel | Question |
 |---|---|---|
-| Domaine | `BASE_DOMAIN` configurable | Le cahier dit `notebenin.bj`, le produit s'appelle Classio. Lequel réserver ? |
+| Domaine | `DOMAIN` et `BASE_DOMAIN` configurables | Le cahier dit `notebenin.bj`, le produit s'appelle Classio. Lequel réserver ? Pilote sur un seul domaine (code école à la connexion) ; sous-domaines plus tard. |
 | Calcul de la moyenne de matière | `Assessment.weight` | La formule exacte (interrogations, devoirs, composition) doit venir de bulletins réels. Non codée à ce stade. |
+| Connexion des parents | Mot de passe, session de 30 jours, codes d'accès remis par l'école (décidé le 12/11/2026) | SMS ou WhatsApp quand le budget le permettra |
 | Journal des brouillons | Non journalisés | Le §8 dit « toute modification » : à confirmer, sinon chaque frappe crée une ligne. |
 | v1 Next.js | Conservée | Supprimer de la branche, ou migrer ses données s'il existe des écoles réelles ? |
 | Changement de numéro | Non traité | Le numéro est partagé entre écoles : qui peut le changer, et avec quelle preuve ? |

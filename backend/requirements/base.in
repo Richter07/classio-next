@@ -9,6 +9,8 @@ argon2-cffi~=25.1
 celery[redis]~=5.5
 django-redis~=6.0
 openpyxl~=3.1
+# Lecture sûre du XML des fichiers Excel importés (bombes XML, entités externes).
+defusedxml~=0.7
 phonenumbers>=9.0
 weasyprint>=66
 django-storages[s3]~=1.14

@@ -14,6 +14,11 @@ class SchoolSettings(TenantModel):
         DOWN = "DOWN", "Par troncature"
         UP = "UP", "Par excès"
 
+    class Formula(models.TextChoices):
+        # Usage du secondaire béninois : (moyenne des interrogations + devoir 1 + devoir 2) / 3.
+        BENIN = "BENIN", "Moyenne des interrogations + devoirs et compositions"
+        WEIGHTED = "WEIGHTED", "Moyenne pondérée de toutes les évaluations"
+
     class PublicationMode(models.TextChoices):
         BY_GRADE = "BY_GRADE", "Par note"
         BY_CLASS = "BY_CLASS", "Par classe"
@@ -22,6 +27,7 @@ class SchoolSettings(TenantModel):
     max_score = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("20"))
     decimals = models.PositiveSmallIntegerField(default=2)
     rounding = models.CharField(max_length=8, choices=Rounding, default=Rounding.HALF_UP)
+    average_formula = models.CharField(max_length=10, choices=Formula, default=Formula.BENIN)
     publication_mode = models.CharField(
         max_length=10, choices=PublicationMode, default=PublicationMode.BY_CLASS
     )

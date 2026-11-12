@@ -3,6 +3,7 @@ name: classio-dev
 services:
   postgres:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev}
       POSTGRES_DB: postgres
@@ -19,6 +20,7 @@ services:
       retries: 20
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     ports: ["127.0.0.1:6379:6379"]
     healthcheck:

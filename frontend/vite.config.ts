@@ -27,6 +27,7 @@ export default defineConfig({
         // Seule l'application est précachée. Les réponses de l'API, qui contiennent des données
         // de mineurs, ne passent jamais par le cache du service worker.
         globPatterns: ["**/*.{js,css,html,svg,png}"],
+        navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//, /^\/admin\//],
       },
     }),
@@ -34,8 +35,13 @@ export default defineConfig({
   server: {
     // Même origine qu'en production : le cookie de session HttpOnly fonctionne sans CORS.
     host: true,
-    allowedHosts: [".classio.localhost"],
-    proxy: { "/api": { target: "http://127.0.0.1:8000", changeOrigin: false } },
+    // Accès depuis un téléphone du même réseau Wi-Fi (adresse IP du PC).
+    allowedHosts: [".classio.localhost", "localhost"],
+    proxy: {
+      "/api": { target: "http://127.0.0.1:8000", changeOrigin: false },
+      "/admin": { target: "http://127.0.0.1:8000", changeOrigin: false },
+      "/static": { target: "http://127.0.0.1:8000", changeOrigin: false },
+    },
   },
   build: { target: "es2019", sourcemap: false },
 });

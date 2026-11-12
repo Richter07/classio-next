@@ -1,0 +1,108 @@
+# Production sur un VPS : docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d
+# Seul Caddy est exposé (80/443). PostgreSQL et Redis restent sur le réseau interne.
+name: classio
+
+x-backend: &backend
+  build: ../backend
+  image: classio-backend
+  restart: unless-stopped
+  environment: &backend-env
+    DJANGO_DEBUG: "False"
+    DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+    ACCESS_CODE_KEY: ${ACCESS_CODE_KEY:?}
+    ALLOWED_HOSTS: ${DOMAIN:?}
+    CSRF_TRUSTED_ORIGINS: https://${DOMAIN}
+    BASE_DOMAIN: ${BASE_DOMAIN:?}
+    PUBLIC_URL: https://${DOMAIN}
+    TRUSTED_PROXY_COUNT: "1"
+    DATABASE_URL: postgres://classio_app:${CLASSIO_APP_PASSWORD:?}@postgres:5432/classio
+    REDIS_URL: redis://redis:6379/0
+    CELERY_TASK_ALWAYS_EAGER: "False"
+    SENTRY_DSN: ${SENTRY_DSN:-}
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: postgres
+      CLASSIO_OWNER_PASSWORD: ${CLASSIO_OWNER_PASSWORD:?}
+      CLASSIO_APP_PASSWORD: ${CLASSIO_APP_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d classio"]
+      interval: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Persisté : les sessions des parents durent 30 jours, un redémarrage ne doit pas les perdre.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 30
+
+  # Migrations avec le rôle propriétaire, puis arrêt. L'application n'utilise jamais ce rôle.
+  migrate:
+    <<: *backend
+    restart: "no"
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    environment:
+      <<: *backend-env
+      DATABASE_URL: postgres://classio_owner:${CLASSIO_OWNER_PASSWORD:?}@postgres:5432/classio
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+    command: ["sh", "-c", "python manage.py collectstatic --noinput -v 0 && exec gunicorn config.wsgi -c gunicorn.conf.py"]
+    volumes:
+      - static:/app/staticfiles
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "config", "worker", "-l", "info", "--concurrency", "2"]
+
+  beat:
+    <<: *backend
+    command: ["celery", "-A", "config", "beat", "-l", "info", "-s", "/tmp/celerybeat-schedule"]
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: infra/caddy/Dockerfile
+    image: classio-web
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?}
+      ACME_EMAIL: ${ACME_EMAIL:?}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - static:/srv/django-static:ro
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:
+  static:
+  caddy_data:
+  caddy_config:

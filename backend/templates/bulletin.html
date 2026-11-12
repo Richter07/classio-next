@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  {{ font_faces|safe }}
+  /* Les marges de page n'héritent pas du corps : sans police explicite, WeasyPrint chargerait
+     une grosse police système de plus. */
+  @page { size: A4; margin: 12mm 10mm; @bottom-center { content: "Bulletin édité avec Classio · page " counter(page); font-family: "Classio", sans-serif; font-size: 7.5pt; color: #5b6b65; } }
+  body { font-family: "Classio", sans-serif; font-size: 8.8pt; color: #14231e; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid {{ school.color_primary }}; padding-bottom: 6px; margin-bottom: 8px; }
+  .school { font-size: 13pt; font-weight: bold; color: {{ school.color_primary }}; }
+  .muted { color: #5b6b65; }
+  h1 { font-size: 12pt; margin: 0 0 2px; text-align: right; }
+  .identity { display: flex; gap: 20px; background: #f4f1e7; padding: 6px 10px; border-radius: 6px; margin-bottom: 8px; }
+  .identity b { display: block; font-size: 10.5pt; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: {{ school.color_primary }}; color: #fff; font-weight: bold; padding: 4px 3px; font-size: 7.6pt; text-align: center; border: 1px solid {{ school.color_primary }}; }
+  th.l { text-align: left; }
+  td { padding: 4px 3px; border: 1px solid #d9d3c2; text-align: center; white-space: nowrap; }
+  td.l { text-align: left; white-space: normal; }
+  td.avg { font-weight: bold; background: #f7f5ee; }
+  td.teacher { font-size: 7.4pt; white-space: normal; }
+  tr.total td { font-weight: bold; background: #f4f1e7; }
+  .summary { display: flex; gap: 8px; margin-top: 10px; }
+  .box { flex: 1; border: 1px solid #d9d3c2; border-radius: 6px; padding: 6px 9px; }
+  .box .big { font-size: 15pt; font-weight: bold; color: {{ school.color_primary }}; }
+  .signatures { display: flex; justify-content: space-between; margin-top: 22px; }
+  .signatures div { width: 30%; border-top: 1px solid #14231e; padding-top: 4px; text-align: center; font-size: 8pt; }
+  .draft { color: #a5441c; }
+</style>
+</head>
+<body>
+{% for page in pages %}
+<section class="page">
+  <header>
+    <div>
+      <div class="school">{{ school.name }}</div>
+      <div class="muted">{{ school.address }}{% if school.city %} · {{ school.city }}{% endif %}{% if school.phone %} · {{ school.phone }}{% endif %}</div>
+    </div>
+    <div>
+      <h1>Bulletin de notes{% if draft %} <span class="draft">· provisoire</span>{% endif %}</h1>
+      <div class="muted" style="text-align:right">{{ page.period }} · {{ page.year }}</div>
+    </div>
+  </header>
+  <div class="identity">
+    <div><span class="muted">Élève</span><b>{{ page.student.last_name }} {{ page.student.first_name }}</b></div>
+    <div><span class="muted">Matricule</span><b>{{ page.student.matricule|default:"—" }}</b></div>
+    <div><span class="muted">Classe</span><b>{{ page.classroom }}</b></div>
+    <div><span class="muted">Effectif classé</span><b>{{ page.ranked_size }}</b></div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th class="l">Matière</th>
+        <th>Moy. interro</th>
+        {% for h in page.rows.0.homeworks %}<th>Devoir {{ forloop.counter }}</th>{% endfor %}
+        {% for e in page.rows.0.exams %}<th>Compo.{% if page.exam_columns > 1 %} {{ forloop.counter }}{% endif %}</th>{% endfor %}
+        <th>Moy. /{{ page.max_score }}</th>
+        <th>Coef.</th>
+        <th>Moy. coef.</th>
+        <th>Rang</th>
+        <th class="l">Appréciation</th>
+        <th class="l">Professeur</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in page.rows %}
+      <tr>
+        <td class="l"><strong>{{ row.subject }}</strong></td>
+        <td>{{ row.quiz }}</td>
+        {% for h in row.homeworks %}<td>{{ h }}</td>{% endfor %}
+        {% for e in row.exams %}<td>{{ e }}</td>{% endfor %}
+        <td class="avg">{{ row.average }}</td>
+        <td>{{ row.coefficient }}</td>
+        <td>{{ row.weighted }}</td>
+        <td>{{ row.rank }}</td>
+        <td class="l">{{ row.appreciation }}</td>
+        <td class="l teacher">{{ row.teacher }}</td>
+      </tr>
+    {% endfor %}
+      <tr class="total">
+        <td class="l" colspan="{{ page.total_span }}">Totaux</td>
+        <td>{{ page.total_coefficients }}</td>
+        <td>{{ page.total_weighted }}</td>
+        <td colspan="3"></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="summary">
+    <div class="box"><span class="muted">Moyenne générale</span><div class="big">{{ page.general }} / {{ page.max_score }}</div></div>
+    <div class="box"><span class="muted">Rang</span><div class="big">{{ page.rank }}</div><span class="muted">sur {{ page.ranked_size }} élèves</span></div>
+    <div class="box"><span class="muted">Classe</span>
+      <div>Moyenne : <b>{{ page.class_average }}</b></div>
+      <div>Plus forte : <b>{{ page.highest }}</b></div>
+      <div>Plus faible : <b>{{ page.lowest }}</b></div>
+    </div>
+  </div>
+  <div class="box" style="margin-top:8px"><span class="muted">Appréciation générale</span><div style="font-size:10.5pt;font-weight:bold">{{ page.appreciation|default:"—" }}</div></div>
+  <div class="signatures"><div>Le professeur principal</div><div>Le chef d'établissement</div><div>Visa des parents</div></div>
+  <p class="muted" style="font-size:7pt;margin-top:12px">
+    Notes ramenées sur {{ page.max_score }}. « Abs » : absence, comptée 0. Moy. coef. = moyenne × coefficient ; moyenne générale = total des moy. coef. ÷ total des coefficients.
+    {% if draft %}<strong class="draft">Document de travail</strong> : non transmis aux familles.{% else %}Bulletin publié le {{ page.released_on|default:printed_at|date:"d/m/Y" }}.{% endif %}
+  </p>
+</section>
+{% endfor %}
+</body>
+</html>

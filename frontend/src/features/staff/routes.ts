@@ -1,0 +1,11 @@
+export { StaffLogin } from "../auth/StaffLogin";
+export { StaffLayout } from "./StaffLayout";
+export { StaffHome } from "./StaffHome";
+export { MyClasses } from "../teacher/MyClasses";
+export { GradeGrid } from "../teacher/GradeGrid";
+export { Validation } from "../direction/Validation";
+export { ResultsPage } from "../direction/Results";
+export { Students } from "../office/Students";
+export { ImportPage } from "../office/Import";
+export { StaffPage } from "../direction/Staff";
+export { Configuration } from "../direction/Configuration";

@@ -12,7 +12,8 @@ from .phone import normalize_phone
 class UserManager(BaseUserManager):
     def _create(self, phone, password, **extra):
         user = self.model(phone=normalize_phone(phone), **extra)
-        user.set_password(password)  # None donne un mot de passe inutilisable : parents, OTP.
+        # None : mot de passe inutilisable jusqu'à l'activation par code d'accès.
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
@@ -71,16 +72,25 @@ class Membership(TenantModel):
         return f"{self.full_name} ({self.role})"
 
 
-class OtpChallenge(TimestampedModel):
-    """Code à usage unique. Globale : elle précède l'authentification et ne dit rien de l'école.
-    Seul le HMAC du code est stocké : un SHA-256 simple de 6 chiffres se casse en un instant."""
+class AccessCode(TimestampedModel):
+    """Code d'activation remis par l'école, sur papier : il permet de choisir son mot de passe
+    la première fois, ou d'en choisir un nouveau après un oubli.
 
-    phone = models.CharField(max_length=20, db_index=True)
+    Pas de SMS : c'est l'école qui transmet l'accès. Le code n'est valable qu'avec le bon numéro,
+    une seule fois, et seul son HMAC est stocké. En émettre un nouveau annule les précédents.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="access_codes")
     code_hmac = models.CharField(max_length=64)
     expires_at = models.DateTimeField()
-    attempts = models.PositiveSmallIntegerField(default=0)
-    consumed_at = models.DateTimeField(null=True, blank=True)
-    request_ip = models.GenericIPAddressField(null=True, blank=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+    # Traçabilité : qui a émis le code, pour quelle école (pas de clé étrangère : la table est
+    # globale et ne doit pas dépendre du contexte d'école).
+    issued_by_user_id = models.UUIDField(null=True, blank=True)
+    school_id = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "used_at"], name="access_code_user_idx")]
 
 
 class PushSubscription(TimestampedModel):

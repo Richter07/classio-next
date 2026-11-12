@@ -1,8 +1,11 @@
+import io
 from contextlib import contextmanager
 from datetime import date
 
 import pytest
+from django.core.management import call_command
 from django.db import connection
+from django.test import override_settings
 
 from apps.academics.models import AcademicYear, Classroom, Level, Period, Subject
 from apps.accounts.models import User
@@ -63,4 +66,19 @@ def school_b(db):
 
 @pytest.fixture
 def parent_user(db):
-    return User.objects.create_user("+2290197000000")
+    return User.objects.create_user("+2290195000000")
+
+
+@pytest.fixture(scope="session")
+def demo_data(django_db_setup, django_db_blocker):
+    """Les deux écoles de démonstration, créées une seule fois pour toute la session."""
+    with django_db_blocker.unblock(), override_settings(DEBUG=True):
+        call_command("seed_demo", stdout=io.StringIO())
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _celery_runs_inline():
+    """Les tâches s'exécutent sur place : les tests ne dépendent pas d'un worker Celery."""
+    from config.celery import app
+
+    app.conf.task_always_eager = True

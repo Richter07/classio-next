@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  {{ font_faces|safe }}
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Classio", sans-serif; font-size: 11pt; color: #14231e; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .school { font-size: 15pt; font-weight: bold; color: {{ school.color_primary }}; border-bottom: 2.5px solid {{ school.color_primary }}; padding-bottom: 6px; }
+  h1 { font-size: 17pt; margin: 18px 0 4px; }
+  .muted { color: #5b6b65; }
+  ol { padding-left: 20px; }
+  li { margin: 10px 0; }
+  .box { border: 2px solid {{ school.color_primary }}; border-radius: 10px; padding: 14px 18px; margin: 16px 0; }
+  .code { font-size: 26pt; font-weight: bold; letter-spacing: 4px; color: {{ school.color_primary }}; }
+  .phone { font-size: 15pt; font-weight: bold; }
+  .warn { background: #fdf0d2; border-radius: 8px; padding: 10px 14px; font-size: 9.5pt; }
+  .cut { margin-top: 26px; border-top: 1px dashed #5b6b65; padding-top: 6px; font-size: 8.5pt; color: #5b6b65; }
+</style>
+</head>
+<body>
+{% for page in pages %}
+<section class="page">
+  <div class="school">{{ school.name }}</div>
+  <h1>Suivre les notes de {{ page.children|join:", " }}</h1>
+  <p class="muted">À l'attention de {{ page.guardian.full_name }}</p>
+
+  {% if page.code %}
+  <p>L'école vous ouvre un accès gratuit à <strong>Classio</strong> : les notes, moyennes et bulletins de votre enfant, sur votre téléphone.</p>
+  <ol>
+    <li>Ouvrez <strong>{{ url }}</strong> sur votre téléphone.</li>
+    <li>Touchez <strong>« Première connexion »</strong>.</li>
+    <li>Entrez votre numéro : <span class="phone">{{ page.phone }}</span></li>
+    <li>Entrez ce code :
+      <div class="box"><span class="code">{{ page.code }}</span><br><span class="muted">Valable une seule fois, jusqu'au {{ expires|date:"d/m/Y" }}.</span></div>
+    </li>
+    <li>Choisissez votre mot de passe (8 caractères au moins). Gardez-le : c'est lui qui vous servira ensuite.</li>
+  </ol>
+  <p class="warn">Ce code est personnel : il donne accès aux notes de votre enfant. Ne le partagez pas. Mot de passe oublié ou lettre perdue ? Demandez un nouveau code au secrétariat de l'école.</p>
+  {% else %}
+  <p>Vous avez déjà un compte Classio. Connectez-vous sur <strong>{{ url }}</strong> avec votre numéro <span class="phone">{{ page.phone }}</span> et votre mot de passe habituel.</p>
+  <p class="warn">Mot de passe oublié ? Demandez un nouveau code au secrétariat de l'école.</p>
+  {% endif %}
+  <p class="cut">Document remis le {{ printed_at|date:"d/m/Y" }} par {{ school.name }}{% if school.phone %} · {{ school.phone }}{% endif %}.</p>
+</section>
+{% endfor %}
+</body>
+</html>

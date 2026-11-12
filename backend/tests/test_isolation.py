@@ -159,7 +159,7 @@ class TestParentAcrossSchools:
     def test_self_read_does_not_expose_other_users(self, school_a, parent_user):
         from apps.accounts.models import User
 
-        other = User.objects.create_user("+2290197000001")
+        other = User.objects.create_user("+2290195000001")
         with tenant_context(school_a["school"].pk):
             Membership.objects.create(user=other, role="TEACHER", full_name="Autre")
         with as_app_role(), tenant_context(user_id=parent_user.pk):

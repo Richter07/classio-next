@@ -2,6 +2,7 @@ node_modules/
 .next/
 .env*
 !.env.example
+!.env.prod.example
 
 # Refonte Django / React
 .venv/
@@ -14,3 +15,6 @@ dev-dist/
 *.tsbuildinfo
 staticfiles/
 media/
+
+# Captures du parcours de bout en bout
+frontend/e2e/captures/

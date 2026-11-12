@@ -12,6 +12,7 @@ class Notification(TenantModel):
         ANNOUNCEMENT = "ANNOUNCEMENT", "Annonce"
 
     class Channel(models.TextChoices):
+        IN_APP = "IN_APP", "Dans l'application"
         PUSH = "PUSH", "Notification push"
         WHATSAPP = "WHATSAPP", "WhatsApp"
         SMS = "SMS", "SMS"
@@ -32,6 +33,9 @@ class Notification(TenantModel):
     kind = models.CharField(max_length=12, choices=Kind)
     channel = models.CharField(max_length=8, choices=Channel)
     status = models.CharField(max_length=9, choices=Status, default=Status.QUEUED)
+    message = models.CharField(max_length=255, blank=True)
+    # Chemin de l'application vers lequel la notification mène (ex. la fiche de l'enfant).
+    link = models.CharField(max_length=255, blank=True)
     provider_ref = models.CharField(max_length=120, blank=True)
     cost_xof = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     error = models.CharField(max_length=255, blank=True)
