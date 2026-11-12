@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { Icon } from "../../shared/ui/Icon";
 
-/** Adresse de contact de Classio pour les questions de données personnelles. À renseigner avant
- *  l'ouverture (voir docs/06-dossier-juridique.md, « Avant le lancement »). */
-const CONTACT = "donnees@classio.bj";
+/** Adresse de contact de Classio pour les questions de données personnelles
+ *  (voir docs/06-dossier-juridique.md, § 4 et « Avant le lancement »). */
+const CONTACT = "classiobenin@gmail.com";
 
 /** Politique de confidentialité, version 2026-11-v1 (Code du numérique, loi n° 2017-20, Livre V).
  *  Tout changement de fond : changer PRIVACY_VERSION dans backend/config/settings.py. */

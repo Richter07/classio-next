@@ -73,4 +73,4 @@ annoncée dans l'application au moins 15 jours avant d'entrer en vigueur.
 
 Ces conditions sont régies par le droit béninois.
 
-Contact : **donnees@classio.bj** (à confirmer avant le lancement).
+Contact : **classiobenin@gmail.com**

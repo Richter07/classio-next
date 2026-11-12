@@ -96,6 +96,16 @@ sont sortis en 2025.
     ni note ;
   - ou héberger un outil équivalent sur votre serveur.
 
+**Adresse de contact sur Gmail (`classiobenin@gmail.com`) :**
+- les messages reçus sont stockés par Google, hors CEDEAO. Les demandes de parents qui y
+  arrivent sortent donc de la CEDEAO ;
+- le risque est faible : c'est le parent qui choisit d'écrire, et le volume est minime ;
+- règles à tenir : n'envoyer **depuis** cette adresse ni notes, ni bulletins, ni listes
+  d'élèves ; transmettre la demande à l'école et y répondre sans recopier de données
+  scolaires ; activer la validation en deux étapes du compte ;
+- dès que Classio a un nom de domaine, passer à une adresse sur ce domaine, chez un fournisseur
+  de messagerie de la CEDEAO si possible.
+
 ## 5. Durées de conservation
 
 Le principe : pas plus longtemps que nécessaire (art. 383 6°). Durées retenues, reprises dans la
@@ -177,13 +187,13 @@ cas de récidive (art. 455), sans compter les sanctions pénales (art. 460 et su
 | Transfert hors CEDEAO | Aucun |
 | Durées | § 5 |
 | Sécurité | § 6 |
-| Droits | Auprès du secrétariat de l'école, ou de Classio : [adresse de contact] |
+| Droits | Auprès du secrétariat de l'école, ou de Classio : classiobenin@gmail.com |
 
 ## 10. Avant le lancement
 
 1. Choisir un hébergeur et un second fournisseur pour les sauvegardes **dans la CEDEAO**.
-2. Créer l'adresse de contact « données personnelles », et la reporter dans `CONTACT` de
-   `Privacy.tsx` (aujourd'hui : `donnees@classio.bj`) et dans les documents 07 et 08.
+2. ✅ Adresse de contact « données personnelles » : `classiobenin@gmail.com` (reportée dans
+   `Privacy.tsx` et dans le document 08). Voir la réserve du § 4 sur Gmail.
 3. Vérifier la version consolidée du Code du numérique (loi n° 2020-35 de 2021) sur les articles
    cités.
 4. Faire signer le contrat de sous-traitance par chaque école pilote.
