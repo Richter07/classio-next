@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { isDirection, isOffice, isTeacher, useMe } from "../../shared/session";
 import { Icon } from "../../shared/ui/Icon";
 import { Stat } from "../../shared/ui/kit";
+import { InstallCard } from "../../shared/pwa/InstallCard";
 import { useOverview } from "./StaffLayout";
 import { MyClasses } from "../teacher/MyClasses";
 
@@ -16,6 +17,7 @@ export function StaffHome() {
         <h1>Bonjour {me.full_name.split(" ").slice(-1)[0]}</h1>
         <p className="muted">{me.school?.name}</p>
       </div>
+      <InstallCard />
       {direction ? <DirectionDashboard /> : <OfficeShortcuts />}
     </main>
   );

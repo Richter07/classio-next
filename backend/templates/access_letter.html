@@ -37,8 +37,10 @@
       <div class="box"><span class="code">{{ page.code }}</span><br><span class="muted">Valable une seule fois, jusqu'au {{ expires|date:"d/m/Y" }}.</span></div>
     </li>
     <li>Choisissez votre mot de passe (8 caractères au moins). Gardez-le : c'est lui qui vous servira ensuite.</li>
+    <li>Installez Classio sur l'écran d'accueil : l'application vous montre comment, en un geste.</li>
   </ol>
   <p class="warn">Ce code est personnel : il donne accès aux notes de votre enfant. Ne le partagez pas. Mot de passe oublié ou lettre perdue ? Demandez un nouveau code au secrétariat de l'école.</p>
+  <p class="muted">Classio ne se télécharge pas sur le Play Store ni sur l'App Store : n'installez aucune application à ce nom, et ne donnez votre code que sur <strong>{{ url }}</strong>.</p>
   {% else %}
   <p>Vous avez déjà un compte Classio. Connectez-vous sur <strong>{{ url }}</strong> avec votre numéro <span class="phone">{{ page.phone }}</span> et votre mot de passe habituel.</p>
   <p class="warn">Mot de passe oublié ? Demandez un nouveau code au secrétariat de l'école.</p>

@@ -167,6 +167,8 @@ export function Segmented<T extends string>({
       {options.map((option) => (
         <button
           key={option.value}
+          // Dans un formulaire, un bouton sans type le soumet : changer d'onglet ne doit rien envoyer.
+          type="button"
           role="tab"
           aria-selected={option.value === value}
           aria-label={option.fullLabel}

@@ -1,6 +1,6 @@
 # Classio : ce qui manque avant la mise en production
 
-État au 12 novembre 2026 (fin de journée), branche `feat/refonte-django-react`. « Production » désigne le pilote avec
+État au 19 novembre 2026, branche `feat/refonte-django-react`. « Production » désigne le pilote avec
 2 ou 3 écoles réelles (phase 2 du cahier des charges).
 
 Légende : **B** bloquant, **I** important (avant d'élargir le pilote), **V2** peut attendre.
@@ -31,18 +31,20 @@ Légende : **B** bloquant, **I** important (avant d'élargir le pilote), **V2** 
 | B | ✅ | PDF longs en tâche de fond | Bulletins d'une classe et lettres d'accès : Celery, gardés une heure, réservés à leur auteur. |
 | B | ✅ | Journaux sans données personnelles | Plus aucun numéro ni contenu de notification dans les journaux hors développement. |
 | B | ✅ | Déploiement | `infra/docker-compose.prod.yml` : Caddy (HTTPS automatique), API, worker, planificateur, PostgreSQL, Redis persistant. Voir [05-deploiement.md](05-deploiement.md). |
-| B | ✅ | Sauvegardes | `infra/backup.sh` (chiffrée AES-256) et `infra/restore-test.sh`, testés sur une vraie restauration. |
-| B | ⬜ | **Serveur et domaine** | À louer et réserver par vous. `infra/server-setup.sh` prépare ensuite le serveur en une commande. |
+| B | ✅ | Répétition générale du déploiement | Pile de production construite et lancée en HTTPS (19/11) : création d'école, activation et connexion du directeur, service worker, PDF, Celery, sauvegarde et restauration. Corrigé à cette occasion : pages de l'application gardées en cache par le navigateur (Caddy), workers Gunicorn tués à tort (erreurs 502), cache des polices non inscriptible, onglets « Parent / Personnel » qui envoyaient le formulaire d'activation. |
+| B | ✅ | Application installable (PWA), sans Play Store | Carte « Installer Classio » adaptée au téléphone (bouton sur Android, marche à suivre sur iPhone, « ouvrir dans le navigateur » depuis WhatsApp ou Facebook), aussi dans « Mon compte ». Bandeau « nouvelle version » : la mise à jour se fait quand l'utilisateur le choisit, jamais au milieu d'une saisie. Bandeau hors connexion pour les parents. Lettre d'accès : étape d'installation et mise en garde contre toute application « Classio » sur les stores. `npm run e2e:pwa`, 11 vérifications. |
+| B | ✅ | Sauvegardes | `infra/backup.sh` (chiffrée AES-256) et `infra/restore-test.sh`. **Corrigé le 19/11** : la tâche de nuit ne lisait pas `infra/.env.prod` et aurait échoué chaque nuit ; une sauvegarde interrompue est maintenant supprimée. Sauvegarde, restauration et cas d'échec testés sur la pile de production. |
+| B | ⬜ | **Serveur et domaine** | À louer et réserver par vous. `infra/server-setup.sh` prépare ensuite le serveur en une commande. Pour les tests, gratuit : `infra/tunnel.sh` sur votre ordinateur, ou Oracle + DuckDNS, [10-deploiement-gratuit.md](10-deploiement-gratuit.md). |
 | B | ◐ | **Copie des sauvegardes hors du serveur** | Prête dans `backup.sh` (rclone) ; il reste à ouvrir un espace chez un second fournisseur et à lancer `rclone config`. |
 | I | ✅ | Intégration continue | `.github/workflows/ci.yml` : lint, migrations, tests, audit des dépendances, build ; actions épinglées par empreinte. Pas encore exécutée sur GitHub. |
 | I | ✅ | Validation rapide en milieu d'année | États des évaluations calculés en une requête SQL. |
 | I | ✅ | Page d'erreur | En français, avec rechargement. Indicateur de chargement entre les pages. |
 | I | ✅ | `ALLOWED_HOSTS=*` refusé en production | Testé. |
 | I | ✅ | Purges | Tâche quotidienne : codes expirés, notifications de plus de 400 jours, imports non appliqués. |
-| I | ✅ | Parcours de bout en bout dans le dépôt | `npm run e2e`, 28 étapes. |
+| I | ✅ | Parcours de bout en bout dans le dépôt | `npm run e2e`, 28 étapes, sur une base remise à zéro (`./dev.sh reset`) : le parcours consomme des codes et publie des bulletins, il ne se rejoue pas sur les mêmes données. |
 | I | ✅ | Démarrage à froid des PDF | Préchauffage de WeasyPrint au lancement de gunicorn, HarfBuzz-subset dans l'image. |
 | I | ✅ | En-têtes de sécurité | HSTS, CSP stricte pour l'application, `nosniff`, `frame-ancestors 'none'`. |
-| I | ⬜ | Supervision | Compte Sentry (`SENTRY_DSN`) et alerte de disponibilité externe. |
+| I | ⬜ | Supervision | Alerte de disponibilité externe (le site répond-il ?) et **alerte en cas d'échec de la sauvegarde** : aujourd'hui, un échec n'est écrit que dans `/var/log/classio-backup.log`. Sentry seulement avec l'autorisation de l'APDP. |
 | I | ⬜ | Contrôles dans l'école par la base | « Parent : ses enfants » et « enseignant : ses classes » sont appliqués et testés dans l'API, pas encore par le RLS. |
 | I | ⬜ | Audit des dépendances Python | `pip-audit` n'a pas pu joindre PyPI pendant les sessions ; la CI le fera. |
 
@@ -64,8 +66,10 @@ Si elle est en ligne : la connexion parent accepte `%` comme code élève. À co
 
 1. **Bulletins réels** : obtenir 2 ou 3 bulletins d'écoles, saisir leurs notes dans Classio et
    comparer moyennes, rangs et appréciations. Choisir la formule qui correspond.
-2. **Serveur et domaine** : louer un VPS (2 vCPU, 4 Go), réserver le domaine, pointer le DNS,
-   puis suivre [05-deploiement.md](05-deploiement.md).
+2. **Serveur et domaine** : un nom de domaine (HTTPS obligatoire pour installer l'application),
+   un VPS de 2 vCPU et 4 Go. Chez LWS (France) : uniquement des données fictives tant que l'APDP
+   n'a pas autorisé le transfert (courriel prêt : [09-courriel-apdp.md](09-courriel-apdp.md)).
+   Puis suivre [05-deploiement.md](05-deploiement.md).
 3. **Second fournisseur pour les sauvegardes**, et copie de la phrase de passe hors du serveur.
 4. **Conformité** : suivre « Avant le lancement » de [06-dossier-juridique.md](06-dossier-juridique.md)
    (hébergeur dans la CEDEAO, adresse de contact, contrat signé, déclaration APDP de chaque école).

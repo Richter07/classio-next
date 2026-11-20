@@ -1,0 +1,13 @@
+# Serveur de test sur cet ordinateur, ouvert sur Internet par un tunnel Cloudflare gratuit.
+# Ne pas lancer à la main : infra/tunnel.sh s'en charge (docs/10-deploiement-gratuit.md).
+services:
+  caddy:
+    # Rien d'ouvert sur l'ordinateur : tout passe par le tunnel, qui assure le HTTPS.
+    ports: !reset []
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.7
+    # Tunnel « rapide » : sans compte, adresse https://<mots-au-hasard>.trycloudflare.com,
+    # nouvelle à chaque lancement.
+    command: ["tunnel", "--no-autoupdate", "--url", "http://caddy:80"]
+    restart: "no"

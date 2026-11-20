@@ -4,6 +4,7 @@ import { api } from "../../shared/api/client";
 import { fmt, initials, relative, today } from "../../shared/format";
 import { Icon } from "../../shared/ui/Icon";
 import { Empty, ErrorBox, Spinner } from "../../shared/ui/kit";
+import { InstallCard } from "../../shared/pwa/InstallCard";
 
 type Child = {
   id: string;
@@ -28,6 +29,7 @@ export function ChildrenHome() {
         </span>
         <h1>Bonjour</h1>
       </div>
+      <InstallCard />
       {query.isLoading && <Spinner />}
       {query.error && <ErrorBox error={query.error} retry={() => void query.refetch()} />}
       {query.data?.children.length === 0 && (

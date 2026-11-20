@@ -4,6 +4,9 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./app/router";
 import { ApiError, ensureCsrf } from "./shared/api/client";
+// Avant tout rendu : Chrome annonce l'installation possible dès le chargement de la page.
+import "./shared/pwa/install";
+import { UpdateBanner } from "./shared/pwa/UpdateBanner";
 import { ToastProvider } from "./shared/ui/kit";
 import "./shared/styles/tokens.css";
 import "./shared/styles/app.css";
@@ -26,6 +29,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <RouterProvider router={router} />
+        <UpdateBanner />
       </ToastProvider>
     </QueryClientProvider>
   </StrictMode>,

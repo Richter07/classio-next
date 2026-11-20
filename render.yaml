@@ -1,0 +1,48 @@
+# Serveur de test Classio sur Render, offre gratuite, DONNÉES FICTIVES UNIQUEMENT.
+# Render → New → Blueprint → ce dépôt : la base, Redis et le site sont créés d'un coup.
+# Mode d'emploi et limites : docs/10-deploiement-gratuit.md (solution C).
+services:
+  - type: web
+    name: classio-test
+    runtime: docker
+    plan: free
+    # La plus proche du Bénin parmi les régions Render.
+    region: frankfurt
+    branch: feat/refonte-django-react
+    dockerfilePath: ./infra/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_ADMIN_URL
+        fromDatabase:
+          name: classio-test-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: classio-test-redis
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: ACCESS_CODE_KEY
+        generateValue: true
+      - key: CLASSIO_APP_PASSWORD
+        generateValue: true
+      # Mot de passe des comptes de démonstration : à saisir à la création (16 caractères au
+      # moins). Laisser vide pour ne pas charger les écoles fictives.
+      - key: DEMO_PASSWORD
+        sync: false
+
+  - type: keyvalue
+    name: classio-test-redis
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+
+databases:
+  - name: classio-test-db
+    plan: free
+    region: frankfurt
+    databaseName: classio
+    postgresMajorVersion: "17"
+    ipAllowList: []

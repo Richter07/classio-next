@@ -29,7 +29,7 @@ from apps.students.models import Enrollment, Guardian, Guardianship, Student
 from apps.tenancy.context import tenant_context
 from apps.tenancy.models import School
 
-PASSWORD = "classio-demo-2026"  # noqa: S105 - comptes locaux, refusés hors DEBUG
+PASSWORD = "classio-demo-2026"  # noqa: S105 - comptes locaux ; hors DEBUG, --password exigé
 SUPERADMIN = "+2290197000099"
 BANDS = [{"min": 16, "label": "Très bien"}, {"min": 14, "label": "Bien"},
          {"min": 12, "label": "Assez bien"}, {"min": 10, "label": "Passable"},
@@ -81,12 +81,23 @@ PARENTS = [
 class Command(BaseCommand):
     help = "Crée deux écoles fictives complètes, avec un compte par rôle."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--password",
+            help="Mot de passe des comptes de démonstration. Obligatoire hors développement "
+                 "(serveur de test public) : au moins 16 caractères, jamais celui du poste local.")
+
     def handle(self, *args, **options):
-        if not settings.DEBUG:
-            raise CommandError("seed_demo est réservé au développement.")
+        self.password = options.get("password") or PASSWORD
+        # Sur un serveur accessible depuis Internet, le mot de passe connu du dépôt ouvrirait
+        # le compte super-admin à tout le monde.
+        if not settings.DEBUG and (len(self.password) < 16 or self.password == PASSWORD):
+            raise CommandError(
+                "Hors développement, donnez un mot de passe d'au moins 16 caractères : "
+                "--password \"$(openssl rand -hex 8)\"")
         users = get_user_model()
         if not users.objects.filter(phone=SUPERADMIN).exists():
-            users.objects.create_superuser(SUPERADMIN, PASSWORD)
+            users.objects.create_superuser(SUPERADMIN, self.password)
         if School.objects.filter(slug__in=SCHOOLS).exists():
             self.stdout.write("Données de démonstration déjà présentes.")
             return
@@ -128,7 +139,7 @@ class Command(BaseCommand):
             staff = {}
             for phone, role, name in spec["staff"]:
                 staff.setdefault(role, []).append(Membership.objects.create(
-                    user=self.user(phone, PASSWORD), role=role, full_name=name))
+                    user=self.user(phone, self.password), role=role, full_name=name))
             teachers = staff["TEACHER"]
             subjects = []
             for name, coef, teacher_index in spec["subjects"]:
@@ -213,9 +224,12 @@ class Command(BaseCommand):
 
         for index, (phone, name, children) in enumerate(PARENTS):
             # Le premier parent a déjà son compte ; le second doit l'activer avec son code.
-            user = self.user(phone, PASSWORD if index == 0 else None)
+            user = self.user(phone, self.password if index == 0 else None)
             if index == 1:
-                access.issue_code(user, code=DEMO_ACCESS_CODE)
+                # Code connu du dépôt en local seulement ; sur un serveur public, code aléatoire.
+                code = access.issue_code(user, code=DEMO_ACCESS_CODE if settings.DEBUG else None)
+                if not settings.DEBUG:
+                    self.stdout.write(f"Code d'accès du parent à activer ({phone}) : {code}")
             for slug, class_name, first, last in children:
                 data = built[slug]
                 with tenant_context(data["school"].pk):

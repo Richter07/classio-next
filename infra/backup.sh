@@ -7,13 +7,19 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+# Sans ce fichier, docker compose refuse de lire la configuration (variables obligatoires) et la
+# sauvegarde échoue chaque nuit.
+ENV_FILE="${ENV_FILE:-.env.prod}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/classio}"
 PASSPHRASE_FILE="${PASSPHRASE_FILE:-/etc/classio/backup.pass}"
 KEEP_DAYS="${KEEP_DAYS:-30}"
 
 mkdir -p "$BACKUP_DIR"
 target="$BACKUP_DIR/classio-$(date +%Y%m%d-%H%M%S).dump.gpg"
-docker compose -f "$COMPOSE_FILE" exec -T postgres pg_dump -U postgres -Fc classio \
+# Une sauvegarde interrompue ne doit pas rester : le test de restauration la prendrait pour la
+# dernière.
+trap 'rm -f "$target"; echo "$(date -Is) ÉCHEC de la sauvegarde" >&2' ERR
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres pg_dump -U postgres -Fc classio \
   | gpg --batch --yes --quiet --symmetric --cipher-algo AES256 \
         --passphrase-file "$PASSPHRASE_FILE" -o "$target"
 [ -s "$target" ] || { echo "Sauvegarde vide : échec" >&2; exit 1; }

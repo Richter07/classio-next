@@ -46,7 +46,8 @@ async function check(page, name) {
   if (overflow) fail(`${name} : défilement horizontal`, overflow);
 }
 
-const browser = await chromium.launch();
+// E2E_CHROMIUM : un Chromium déjà installé, si la version attendue par Playwright manque.
+const browser = await chromium.launch({ executablePath: process.env.E2E_CHROMIUM || undefined });
 const phone = { viewport: { width: 360, height: 760 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" };
 const desktop = { viewport: { width: 1280, height: 860 }, locale: "fr-FR" };
 
@@ -135,6 +136,14 @@ await step("Première connexion : mauvais code refusé", async () => {
   await newcomer.goto(`${BASE}/connexion`);
   await newcomer.getByRole("link", { name: /Première connexion/ }).click();
   await newcomer.getByRole("heading", { name: "Première connexion" }).waitFor();
+  // Changer « Je suis » ne doit pas envoyer le formulaire (ni consommer une tentative).
+  const activations = [];
+  newcomer.on("request", (r) => r.url().includes("/auth/activate/") && activations.push(r.url()));
+  await newcomer.getByRole("tab", { name: "Personnel" }).click();
+  await newcomer.getByRole("tab", { name: "Parent" }).click();
+  await newcomer.waitForTimeout(300);
+  if (activations.length || (await newcomer.locator(".field-error").count()))
+    throw new Error("le choix Parent / Personnel a envoyé le formulaire");
   await newcomer.getByLabel("Numéro de téléphone").fill("01 97 00 00 02");
   await newcomer.getByLabel("Code d'accès").fill("AAAA-BBBB");
   await newcomer.getByLabel("Choisissez un mot de passe").fill("mangue-ananas-26");

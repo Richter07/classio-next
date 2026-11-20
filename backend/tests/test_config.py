@@ -5,7 +5,7 @@ import io
 import pytest
 from django.core.management import call_command
 from django.db import connection
-from django.test import Client
+from django.test import Client, override_settings
 
 from apps.accounts.models import User
 
@@ -125,3 +125,13 @@ def test_a_school_only_sees_its_own_configuration(director):
 def test_only_direction_configures():
     secretary = login("+2290197000011", "classio-demo-2026", "ceg-les-pylones")
     assert secretary.get("/api/v1/config/").status_code == 403
+
+
+@pytest.mark.parametrize("password", [None, "court", "classio-demo-2026"])
+def test_seed_demo_hors_developpement_exige_un_mot_de_passe_fort(password):
+    """Sur un serveur de test public, le mot de passe connu du dépôt ouvrirait le super-admin."""
+    from django.core.management import CommandError
+
+    args = ["--password", password] if password else []
+    with override_settings(DEBUG=False), pytest.raises(CommandError, match="16 caractères"):
+        call_command("seed_demo", *args, stdout=io.StringIO())

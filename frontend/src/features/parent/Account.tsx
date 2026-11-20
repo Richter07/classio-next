@@ -7,6 +7,7 @@ import { useLogout, useMe } from "../../shared/session";
 import { Icon } from "../../shared/ui/Icon";
 import { Button, ErrorBox, Field, useToast } from "../../shared/ui/kit";
 import { PasswordInput } from "../auth/ParentLogin";
+import { InstallCard } from "../../shared/pwa/InstallCard";
 
 export function Account() {
   const { data: me } = useMe();
@@ -53,6 +54,7 @@ export function Account() {
           Enregistrer
         </Button>
       </form>
+      <InstallCard permanent />
       <Link to="/confidentialite" className="link">
         Politique de confidentialité
       </Link>

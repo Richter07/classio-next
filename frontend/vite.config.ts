@@ -6,14 +6,21 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      // « prompt » : la nouvelle version attend l'accord de l'utilisateur (UpdateBanner), pour ne
+      // jamais recharger la page au milieu d'une saisie de notes.
+      registerType: "prompt",
+      injectRegister: false,
       includeAssets: ["icons/icon.svg", "icons/apple-touch-icon.png"],
       manifest: {
         name: "Classio",
         short_name: "Classio",
         description: "Les notes de l'école, sur votre téléphone.",
         lang: "fr",
+        id: "/",
         start_url: "/",
+        scope: "/",
+        categories: ["education"],
+        prefer_related_applications: false,
         display: "standalone",
         background_color: "#FBF7EC",
         theme_color: "#0E5A43",

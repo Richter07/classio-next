@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../shared/api/client";
 import { fmt, fmtDate, shortPeriod } from "../../shared/format";
+import { InstallCard } from "../../shared/pwa/InstallCard";
 import { Icon } from "../../shared/ui/Icon";
 import { Button, Dialog, Empty, ErrorBox, Field, Input, Segmented, Select, Spinner, StateBadge } from "../../shared/ui/kit";
 
@@ -34,6 +35,7 @@ export function MyClasses() {
         <h1>Mes classes</h1>
         <p className="muted">Choisissez une évaluation pour saisir les notes.</p>
       </div>
+      <InstallCard />
       {query.isLoading && <Spinner />}
       {query.error && <ErrorBox error={query.error} retry={() => void query.refetch()} />}
       {query.data?.class_subjects.length === 0 && (

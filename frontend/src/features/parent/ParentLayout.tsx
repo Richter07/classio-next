@@ -4,6 +4,7 @@ import { api } from "../../shared/api/client";
 import { useMe } from "../../shared/session";
 import { Icon } from "../../shared/ui/Icon";
 import { RouteProgress, Spinner } from "../../shared/ui/kit";
+import { OfflineBanner } from "../../shared/pwa/UpdateBanner";
 import logoDark from "../../shared/ui/logo-on-dark.svg";
 
 export type Notifications = {
@@ -37,6 +38,7 @@ export function ParentLayout() {
         </Link>
       </header>
       <RouteProgress />
+      <OfflineBanner />
       <Outlet />
     </>
   );

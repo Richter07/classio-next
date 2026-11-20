@@ -3,12 +3,16 @@
 Pour un VPS sous Ubuntu, avec Docker. Un seul domaine pour le pilote (ex. `app.classio.bj`) :
 le personnel saisit le code de son école à la connexion.
 
+Serveur de test gratuit, données fictives seulement : voir [10-deploiement-gratuit.md](10-deploiement-gratuit.md).
+
 ## 1. Préparer le serveur
 
 1. Un VPS d'au moins 2 vCPU et 4 Go de mémoire (la génération des PDF en consomme), Ubuntu 24.04,
    **situé dans un pays membre de la CEDEAO**. Hors CEDEAO, il faut l'autorisation préalable de
    l'APDP (Code du numérique, art. 391 et 407 ; voir [06-dossier-juridique.md](06-dossier-juridique.md)).
-2. Un enregistrement DNS `A` de `app.classio.bj` vers l'adresse IP du serveur.
+2. Un nom de domaine, et un enregistrement DNS `A` de `app.<domaine>` vers l'adresse IP du
+   serveur. Le HTTPS est indispensable : sans lui, l'application ne s'installe pas sur les
+   téléphones et la connexion est refusée (cookies sécurisés).
 3. Connecté en SSH avec une clé, lancez le script de préparation :
 
 ```bash
@@ -78,11 +82,24 @@ La direction termine la configuration dans l'écran « Configuration » (l'accue
 découpage de l'année, niveaux, classes, matières et coefficients, attribution des enseignants,
 formule de calcul. Le secrétariat importe ensuite les élèves et imprime les lettres d'accès.
 
-## 7. Mettre à jour
+## 7. Installer l'application sur les téléphones
+
+Classio n'est pas sur le Play Store : c'est une application web installable. Au premier
+passage, chaque parent ou enseignant voit une carte « Installer Classio sur ce téléphone »
+adaptée à son appareil (aussi dans « Mon compte »). La lettre d'accès l'annonce, et met en garde
+contre toute application « Classio » sur les stores.
+
+Lors de la réunion de rentrée, montrez-le une fois sur un téléphone : c'est ce qui fait le plus
+pour l'adoption.
+
+## 8. Mettre à jour
 
 ```bash
 cd /opt/classio && git pull
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build
 ```
 
-Faites une sauvegarde juste avant chaque mise à jour.
+Faites une sauvegarde juste avant chaque mise à jour (`sudo /opt/classio/infra/backup.sh`).
+
+Les utilisateurs voient alors « Une nouvelle version de Classio est disponible » et mettent à
+jour d'un geste, quand ils le veulent : un enseignant en pleine saisie n'est jamais interrompu.

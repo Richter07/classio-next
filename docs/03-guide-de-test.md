@@ -71,6 +71,12 @@ En développement, chaque notification s'écrit aussi dans le terminal.
   (expiration, 5 essais, limitation des demandes), import, calculs, journal d'audit.
 - Un parcours navigateur de 28 étapes, dans le dépôt : `cd frontend && npm run e2e` (après
   `./dev.sh reset` et avec `./dev.sh` lancé). Captures dans `frontend/e2e/captures/`.
+- L'application installable (PWA), sur la version de production : `cd frontend && npm run build
+  && npm run e2e:pwa` (avec `./dev.sh` lancé). 11 vérifications : carte d'installation sur
+  Android, iPhone et depuis WhatsApp, « Plus tard », hors connexion, aucune donnée de l'API dans le
+  cache du téléphone, bandeau « nouvelle version ».
+- Si Playwright réclame une version de Chromium absente, indiquez-en une déjà installée :
+  `E2E_CHROMIUM=~/.cache/ms-playwright/chromium_headless_shell-<n°>/chrome-headless-shell-linux64/chrome-headless-shell`.
 
 ## Pas encore construit
 

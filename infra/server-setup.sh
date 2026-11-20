@@ -26,6 +26,16 @@ apt-get update -q
 apt-get install -y -q docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 say "Pare-feu : SSH, HTTP, HTTPS seulement"
+# Images Ubuntu d'Oracle Cloud : des règles iptables maison rejettent tout sauf SSH, même après
+# l'ouverture des ports dans la console. On ouvre 80 et 443 avant qu'ufw ne prenne le relais.
+if [ -f /etc/iptables/rules.v4 ] && grep -q REJECT /etc/iptables/rules.v4; then
+  for port in 80 443; do
+    iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null \
+      || iptables -I INPUT -p tcp --dport "$port" -j ACCEPT
+  done
+  iptables -C INPUT -p udp --dport 443 -j ACCEPT 2>/dev/null \
+    || iptables -I INPUT -p udp --dport 443 -j ACCEPT
+fi
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow OpenSSH

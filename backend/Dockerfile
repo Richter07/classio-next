@@ -2,6 +2,9 @@
 FROM python:3.12-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+# Cache de fontconfig inscriptible par l'utilisateur classio (sinon, polices relues à chaque
+# démarrage de processus et « Fontconfig error: No writable cache directories »).
+ENV XDG_CACHE_HOME=/tmp/cache
 
 # Bibliothèques de WeasyPrint. HarfBuzz-subset rend le découpage des polices bien plus rapide.
 RUN apt-get update \

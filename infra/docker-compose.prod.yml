@@ -89,6 +89,8 @@ services:
     environment:
       DOMAIN: ${DOMAIN:?}
       ACME_EMAIL: ${ACME_EMAIL:?}
+      SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-${DOMAIN}}
+      TRUSTED_PROXIES: ${CADDY_TRUSTED_PROXIES:-127.0.0.1/32}
     ports:
       - "80:80"
       - "443:443"
