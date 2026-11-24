@@ -8,7 +8,7 @@ graceful_timeout = 30
 keepalive = 5
 # Battement de cœur des workers en mémoire : sur le /tmp d'un conteneur Docker, l'écriture
 # peut bloquer, et Gunicorn tue alors des workers sains (« WORKER TIMEOUT », erreurs 502).
-worker_tmp_dir = "/dev/shm"
+worker_tmp_dir = "/dev/shm"  # noqa: S108 (mémoire partagée voulue, voir ci-dessus)
 # Recycle les workers pour contenir la mémoire de WeasyPrint.
 max_requests = 1000
 max_requests_jitter = 100

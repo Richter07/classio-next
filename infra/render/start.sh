@@ -19,20 +19,24 @@ from psycopg import sql
 with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as db:
     me, bypass = db.execute(
         "SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user").fetchone()
-    if not bypass:
-        sys.exit(f"L'utilisateur {me} n'a pas l'attribut BYPASSRLS : les commandes d'administration "
-                 "(création d'école, données fictives) ne pourraient pas fonctionner. Utilisez une "
-                 "base où l'utilisateur principal l'a (docs/10-deploiement-gratuit.md).")
     password = os.environ["CLASSIO_APP_PASSWORD"]
     exists = db.execute("SELECT 1 FROM pg_roles WHERE rolname = 'classio_app'").fetchone()
+    # Sans SUPERUSER, PostgreSQL 16+ interdit de nommer SUPERUSER ou BYPASSRLS, même pour les
+    # refuser : on crée le rôle avec les valeurs par défaut (toutes à NO), puis on les vérifie.
     verb = "ALTER" if exists else "CREATE"
-    db.execute(sql.SQL(verb + " ROLE classio_app LOGIN PASSWORD {} "
-                       "NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS").format(sql.Literal(password)))
-    db.execute(sql.SQL("GRANT classio_app TO {}").format(sql.Identifier(me)))
+    db.execute(sql.SQL(verb + " ROLE classio_app LOGIN PASSWORD {}").format(sql.Literal(password)))
+    unsafe = db.execute(
+        "SELECT rolsuper OR rolbypassrls OR rolcreaterole OR rolcreatedb FROM pg_roles "
+        "WHERE rolname = 'classio_app'").fetchone()[0]
+    if unsafe:
+        sys.exit("Le rôle classio_app a des droits qui contournent le RLS : arrêt.")
+    if not db.execute("SELECT pg_has_role(current_user, 'classio_app', 'MEMBER')").fetchone()[0]:
+        db.execute(sql.SQL("GRANT classio_app TO {}").format(sql.Identifier(me)))
     dbname = db.info.dbname
     db.execute(sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(sql.Identifier(dbname)))
     db.execute(sql.SQL("GRANT CONNECT ON DATABASE {} TO classio_app").format(sql.Identifier(dbname)))
-    print(f"  propriétaire : {me} (BYPASSRLS) ; application : classio_app")
+    mode = "BYPASSRLS" if bypass else "propriétaire des tables, RLS non forcé pour lui"
+    print(f"  propriétaire : {me} ({mode}) ; application : classio_app, soumis au RLS")
 PY
 
 app_url=$(python -c "
@@ -44,6 +48,27 @@ print(u.urlunsplit((p.scheme, f'classio_app:{pw}@{host}', p.path, p.query, '')))
 
 echo "▸ Migrations"
 DATABASE_URL="$DATABASE_ADMIN_URL" python manage.py migrate --noinput
+
+# Les hébergeurs gérés (Render, Neon…) ne donnent jamais BYPASSRLS. Avec FORCE, le propriétaire
+# des tables serait bloqué par des politiques qui ne visent que classio_app. Sans FORCE, il en est
+# exempté comme tout propriétaire, alors que classio_app, qui n'est pas propriétaire, reste soumis
+# à toutes les politiques. Refait à chaque démarrage : une nouvelle migration remet FORCE.
+DATABASE_URL="$DATABASE_ADMIN_URL" python - <<'PY'
+import os
+import psycopg
+from psycopg import sql
+
+with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as db:
+    if db.execute("SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user").fetchone()[0]:
+        raise SystemExit
+    tables = db.execute(
+        "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+        "WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relforcerowsecurity "
+        "AND pg_get_userbyid(c.relowner) = current_user").fetchall()
+    for (table,) in tables:
+        db.execute(sql.SQL("ALTER TABLE {} NO FORCE ROW LEVEL SECURITY").format(sql.Identifier(table)))
+    print(f"  RLS non forcé pour le propriétaire sur {len(tables)} table(s)")
+PY
 if [ -n "${DEMO_PASSWORD:-}" ]; then
   echo "▸ Écoles fictives (si absentes)"
   DATABASE_URL="$DATABASE_ADMIN_URL" python manage.py seed_demo --password "$DEMO_PASSWORD"

@@ -58,13 +58,17 @@ Classio affichent « Une nouvelle version est disponible ».
 - Redis gratuit sans sauvegarde : un redémarrage déconnecte les utilisateurs.
 - 512 Mo de mémoire : Classio en utilise environ 200.
 
-### C4. Si le démarrage s'arrête sur « n'a pas l'attribut BYPASSRLS »
+### C4. Base sans BYPASSRLS (cas de Render)
 
-Le rôle propriétaire doit pouvoir contourner l'isolation pour créer les écoles. Si l'utilisateur
-de la base Render ne l'a pas, prenez une base gratuite chez [Neon](https://neon.com), qui
-n'expire pas : créez un projet (région Francfort), copiez sa chaîne de connexion, puis dans
-Render, **classio-test → Environment**, remplacez `DATABASE_ADMIN_URL` par cette chaîne.
-Si Neon refuse aussi, dites-le-moi : il faudra adapter les migrations.
+L'utilisateur fourni par Render n'a pas l'attribut BYPASSRLS. Le démarrage
+([infra/render/start.sh](../infra/render/start.sh)) s'en accommode : après les migrations, il
+retire `FORCE ROW LEVEL SECURITY` sur les tables, ce qui exempte leur seul propriétaire (qui
+crée les écoles et charge les données fictives). L'application se connecte avec `classio_app`,
+qui n'est pas propriétaire : elle reste soumise à toutes les politiques, l'isolation entre
+écoles est intacte. Le journal affiche « RLS non forcé pour le propriétaire ».
+
+La production (Docker, [05-deploiement.md](05-deploiement.md)) garde FORCE et un propriétaire
+avec BYPASSRLS.
 
 ## A. Sur votre ordinateur, par un tunnel Cloudflare
 

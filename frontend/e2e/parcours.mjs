@@ -7,12 +7,13 @@
 // ordinateur pour la direction. À chaque écran : capture dans e2e/captures/, contrôle qu'aucun
 // élément ne dépasse la largeur de l'écran, et relevé des erreurs JavaScript.
 import { mkdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const BASE = process.env.E2E_BASE ?? "http://localhost:5173";
 const PASSWORD = "classio-demo-2026";
 const SCHOOL = "ceg-les-pylones";
-const SHOTS = new URL("./captures/", import.meta.url).pathname;
+const SHOTS = fileURLToPath(new URL("./captures/", import.meta.url));
 mkdirSync(SHOTS, { recursive: true });
 
 const results = [];
@@ -338,7 +339,7 @@ await step("Secrétariat : code d'accès d'un parent (mot de passe oublié)", as
 });
 await step("Secrétariat : import Excel, rapport, lettres des nouveaux parents", async () => {
   await sec.goto(`${BASE}/ecole/import`);
-  await sec.locator('input[type="file"]').setInputFiles(new URL("./eleves.xlsx", import.meta.url).pathname);
+  await sec.locator('input[type="file"]').setInputFiles(fileURLToPath(new URL("./eleves.xlsx", import.meta.url)));
   await sec.getByText("Vérifiez le rapport").waitFor();
   await check(sec, "15-secretariat-rapport");
   await sec.getByRole("button", { name: /Importer les 2 élèves/ }).click();
