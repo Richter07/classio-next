@@ -69,15 +69,22 @@ with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as db:
         db.execute(sql.SQL("ALTER TABLE {} NO FORCE ROW LEVEL SECURITY").format(sql.Identifier(table)))
     print(f"  RLS non forcé pour le propriétaire sur {len(tables)} table(s)")
 PY
-if [ -n "${DEMO_PASSWORD:-}" ]; then
-  echo "▸ Écoles fictives (si absentes)"
-  DATABASE_URL="$DATABASE_ADMIN_URL" python manage.py seed_demo --password "$DEMO_PASSWORD"
-fi
 export DATABASE_URL="$app_url"
 python manage.py collectstatic --noinput -v 0
 
 echo "▸ Démarrage"
 gunicorn config.wsgi -c gunicorn.conf.py --bind 127.0.0.1:8000 &
+
+# Après le démarrage, en arrière-plan : sur l'offre gratuite, le chargement dure plusieurs
+# minutes, et Render arrête le service si aucun port n'est ouvert à temps. Le chargement est
+# tout ou rien : interrompu, il recommence au démarrage suivant.
+if [ -n "${DEMO_PASSWORD:-}" ]; then
+  (
+    echo "▸ Écoles fictives (si absentes), en arrière-plan"
+    DATABASE_URL="$DATABASE_ADMIN_URL" nice python manage.py seed_demo --password "$DEMO_PASSWORD" \
+      || echo "▸ Échec du chargement des écoles fictives (voir ci-dessus)"
+  ) &
+fi
 export SITE_ADDRESS=":$PORT" BACKEND_UPSTREAM=127.0.0.1:8000 DJANGO_STATIC_ROOT=/app/staticfiles
 export TRUSTED_PROXIES="${TRUSTED_PROXIES:-private_ranges}"
 export CLIENT_IP_HEADERS="${CLIENT_IP_HEADERS:-Cf-Connecting-IP X-Forwarded-For}"

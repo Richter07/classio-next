@@ -11,6 +11,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 from django.utils import timezone
 
 from apps.academics.models import (
@@ -95,12 +96,24 @@ class Command(BaseCommand):
             raise CommandError(
                 "Hors développement, donnez un mot de passe d'au moins 16 caractères : "
                 "--password \"$(openssl rand -hex 8)\"")
+        present = School.objects.filter(slug__in=SCHOOLS).count()
+        if present == len(SCHOOLS):
+            self.stdout.write("Données de démonstration déjà présentes.")
+            return
+        if present:
+            raise CommandError(
+                "Données de démonstration incomplètes (chargement interrompu par une ancienne "
+                "version) : repartez d'une base vide (docs/10-deploiement-gratuit.md § C3).")
+        # Tout ou rien : un chargement interrompu (serveur arrêté, délai dépassé) ne laisse rien,
+        # et le démarrage suivant recommence proprement.
+        with transaction.atomic():
+            self.build_all()
+        self.stdout.write(self.style.SUCCESS("Données de démonstration créées."))
+
+    def build_all(self):
         users = get_user_model()
         if not users.objects.filter(phone=SUPERADMIN).exists():
             users.objects.create_superuser(SUPERADMIN, self.password)
-        if School.objects.filter(slug__in=SCHOOLS).exists():
-            self.stdout.write("Données de démonstration déjà présentes.")
-            return
         self.rng = random.Random(2026)  # noqa: S311 - données fictives
         self.phone_counter = 0
         built = {slug: self.build(slug, spec) for slug, spec in SCHOOLS.items()}
@@ -113,7 +126,6 @@ class Command(BaseCommand):
         with tenant_context(data["school"].pk):
             for classroom, _ in data["classes"].values():
                 release.release(classroom, data["periods"][0], None)
-        self.stdout.write(self.style.SUCCESS("Données de démonstration créées."))
 
     def user(self, phone, password=None):
         users = get_user_model()
